@@ -1,4 +1,4 @@
-#Author Huitziuit 
+#Author Huitziuit
 import random
 import math
 from sys import argv
@@ -13,7 +13,7 @@ clientes=[]
 
 
 def main():
-    lock=Lock()         #candado para acceder a clientes[]    
+    lock=Lock()         #candado para acceder a clientes[]
 
     numAutos=       10000000       #10000000            tarda 10seg en relaizar los calculos
     anchoDelMapa=10000000000    #10,000,000,000
@@ -24,7 +24,7 @@ def main():
 
     print("======== Colocando autos... ========")
     for i in range(numAutos):
-        
+
         PosAutosX.append(random.randrange(0, anchoDelMapa, 1))
         PosAutosY.append(random.randrange(0, anchoDelMapa, 1))
     print("\n---> Autos colocados\n---> Creando socket...")
@@ -33,15 +33,15 @@ def main():
     try:
         mySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("---> Socket creado.\n")
-        mySocket.bind((HOST, PORT))        
-        mySocket.listen()    
+        mySocket.bind((HOST, PORT))
+        mySocket.listen()
         print("\n======== Esperando clientes ========")
         print("======= En el puerto ", PORT," =======")
         while True:
             #si se detecta una coneccion se asigna el nuevo socket a un nuevo hilo
-            coneccion, addrClient = mySocket.accept()    
+            coneccion, addrClient = mySocket.accept()
             print ("\n\nSe detecto una coneccion\n----> Asignando coneccion a un hilo" )
-            t = Thread(target=calcula, args=(coneccion, numAutos, PosAutosX, PosAutosY,lock)) 
+            t = Thread(target=calcula, args=(coneccion, numAutos, PosAutosX, PosAutosY,lock))
             t.start()   #corriendo hilo
 
     except socket.error as err:
@@ -50,12 +50,12 @@ def main():
 
 def calcula(Coneccion,No_A,Xs,Ys,lock):
     global clientes
-    coneccion=Coneccion 
+    coneccion=Coneccion
     coordenadas = coneccion.recv(1024).decode()# recibe lo que el cliente envio
     print("--------> Calculando distancias de "+ coordenadas.split(" ")[0]+" a cada Uber...")
     menor=math.inf
     mejorUber=0
-    #calcula las distancias de cada uber al cliente 
+    #calcula las distancias de cada uber al cliente
     for i in range(No_A):
         aux=distancia(int(coordenadas.split(" ")[1]), int(coordenadas.split(" ")[2]),Xs[i],Ys[i])
         if(aux<menor):
@@ -64,15 +64,15 @@ def calcula(Coneccion,No_A,Xs,Ys,lock):
 
     menor=round(menor,3)
 
-    print("\nPara "+ coordenadas.split(" ")[0]+ " la mejor distancia es ",menor, " al Uber No. ",mejorUber+1,"\n" )  
-    
+    print("\nPara "+ coordenadas.split(" ")[0]+ " la mejor distancia es ",menor, " al Uber No. ",mejorUber+1,"\n" )
+
     #Respuesta de la operacion para el cliente
-    resCliente = "Estas a "+str(menor)+ " del Uber No. "+str(mejorUber+1) 
-    coneccion.send(resCliente.encode()) 
+    resCliente = "Estas a "+str(menor)+ " del Uber No. "+str(mejorUber+1)
+    coneccion.send(resCliente.encode())
 
     #comienzo de la seccion critica
     lock.acquire()
-    clientes.append(coordenadas.split(" ")[0]) 
+    clientes.append(coordenadas.split(" ")[0])
     lock.release()
     #fin de la seccion critica
 
