@@ -6,9 +6,6 @@ import sys
 from threading import Thread, Lock
 import time
 import socket
-
-from rsc.uber import HOST
-
 PORT = 7000
 HOST = "127.0.0.1"
 
@@ -16,9 +13,9 @@ clientes=[]
 
 
 def main():
-    argv=sys.argv
+    lock=Lock()         #candado para acceder a clientes[]    
 
-    numAutos=10000000       #10000000            tarda 26seg
+    numAutos=       10000000       #10000000            tarda 10seg en relaizar los calculos
     anchoDelMapa=10000000000    #10,000,000,000
 
     #Coloca en lugares aleatorios los autos
@@ -32,6 +29,7 @@ def main():
         PosAutosY.append(random.randrange(0, anchoDelMapa, 1))
     print("\n---> Autos colocados\n---> Creando socket...")
 
+    #Crea el socket
     try:
         mySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("---> Socket creado.\n")
@@ -40,33 +38,45 @@ def main():
         print("\n======== Esperando clientes ========")
         print("======= En el puerto ", PORT," =======")
         while True:
-            coneccion, direccion_cliente = mySocket.accept()    
+            #si se detecta una coneccion se asigna el nuevo socket a un nuevo hilo
+            coneccion, addrClient = mySocket.accept()    
             print ("\n\nSe detecto una coneccion\n----> Asignando coneccion a un hilo" )
-            t = Thread(target=calcula, args=(coneccion, numAutos, PosAutosX, PosAutosY))
-            t.start()
+            t = Thread(target=calcula, args=(coneccion, numAutos, PosAutosX, PosAutosY,lock)) 
+            t.start()   #corriendo hilo
 
     except socket.error as err:
         print(err)
 
 
-def calcula(Coneccion,No_A,Xs,Ys):
+def calcula(Coneccion,No_A,Xs,Ys,lock):
+    global clientes
     coneccion=Coneccion 
-    solicitud = coneccion.recv(1024).decode()#recibe la solicitud del cliente
-    print("--------> Calculando distancias de "+ solicitud.split(" ")[0]+" a cada Uber...")
+    coordenadas = coneccion.recv(1024).decode()# recibe lo que el cliente envio
+    print("--------> Calculando distancias de "+ coordenadas.split(" ")[0]+" a cada Uber...")
     menor=math.inf
     mejorUber=0
+    #calcula las distancias de cada uber al cliente 
     for i in range(No_A):
-        aux=distancia(int(solicitud.split(" ")[1]), int(solicitud.split(" ")[2]),Xs[i],Ys[i])
+        aux=distancia(int(coordenadas.split(" ")[1]), int(coordenadas.split(" ")[2]),Xs[i],Ys[i])
         if(aux<menor):
             menor=aux
             mejorUber=i
 
     menor=round(menor,3)
 
-    print("\nPara "+ solicitud.split(" ")[0]+ " la mejor distancia es ",menor, " al Uber No. ",mejorUber+1,"\n" )  
+    print("\nPara "+ coordenadas.split(" ")[0]+ " la mejor distancia es ",menor, " al Uber No. ",mejorUber+1,"\n" )  
     
-    datos_para_el_cliente = "Estas a "+str(menor)+ " del Uber No. "+str(mejorUber+1) 
-    coneccion.send(datos_para_el_cliente.encode())  
+    #Respuesta de la operacion para el cliente
+    resCliente = "Estas a "+str(menor)+ " del Uber No. "+str(mejorUber+1) 
+    coneccion.send(resCliente.encode()) 
+
+    #comienzo de la seccion critica
+    lock.acquire()
+    clientes.append(coordenadas.split(" ")[0]) 
+    lock.release()
+    #fin de la seccion critica
+
+    print("***** Clientes atendidos ",clientes)
     coneccion.close()
 
 def distancia(x1, y1, x2, y2):

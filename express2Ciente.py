@@ -13,12 +13,14 @@ def main():
     argv = sys.argv
     mySocket=socket.socket()
     mySocket.connect((HOST,PORT))
-    mensaje=argv[1]+" "+argv[2]+" "+argv[3] 
+    mensaje=argv[1]+" "+argv[2]+" "+argv[3] #nombre y coordenadas
     mySocket.sendall(mensaje.encode())
+
+    #Espero el calculo del lado del servidor
     print("Esperando respuesta del servidor...")
     respuesta = mySocket.recv(1024).decode()
-    mySocket.close()
     print("\n-> Respuesta: ",respuesta)
+    mySocket.close()
 
 if __name__ == "__main__":
     main()
