@@ -6,7 +6,7 @@ import sys
 from threading import Thread, Lock
 import time
 import socket
-PORT = 7000
+PORT = 7780
 HOST = "127.0.0.1"
 
 clientes=[]

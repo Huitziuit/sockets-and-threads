@@ -5,7 +5,7 @@
 import socket
 import sys
 
-PORT = 7000
+PORT = 7780
 HOST = "127.0.0.1"
 
 def main():
