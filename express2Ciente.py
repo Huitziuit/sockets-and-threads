@@ -5,7 +5,6 @@
 import socket
 import sys
 
-from rsc.uber import HOST, PORT
 PORT = 7000
 HOST = "127.0.0.1"
 
